@@ -35,18 +35,29 @@ export interface SpotifyResult {
   preview_url: string;
 }
 
+async function assertOk(res: Response): Promise<Response> {
+  if (!res.ok) {
+    const text = await res.text().catch(() => res.statusText);
+    throw new Error(`API ${res.status}: ${text}`);
+  }
+  return res;
+}
+
 export async function searchYouTube(query: string): Promise<SearchResult[]> {
   const res = await fetch(`${API_BASE}/api/search?q=${encodeURIComponent(query)}`);
+  await assertOk(res);
   return res.json();
 }
 
 export async function searchSpotify(query: string): Promise<SpotifyResult[]> {
   const res = await fetch(`${API_BASE}/api/search/spotify?q=${encodeURIComponent(query)}`);
+  await assertOk(res);
   return res.json();
 }
 
 export async function listSongs(): Promise<Song[]> {
   const res = await fetch(`${API_BASE}/api/songs/`);
+  await assertOk(res);
   return res.json();
 }
 
@@ -56,6 +67,7 @@ export async function addSong(url: string): Promise<Song> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ url }),
   });
+  await assertOk(res);
   return res.json();
 }
 
@@ -63,11 +75,13 @@ export async function uploadSong(file: File): Promise<Song> {
   const form = new FormData();
   form.append("file", file);
   const res = await fetch(`${API_BASE}/api/songs/upload`, { method: "POST", body: form });
+  await assertOk(res);
   return res.json();
 }
 
 export async function deleteSong(id: string): Promise<void> {
-  await fetch(`${API_BASE}/api/songs/${id}`, { method: "DELETE" });
+  const res = await fetch(`${API_BASE}/api/songs/${id}`, { method: "DELETE" });
+  await assertOk(res);
 }
 
 export function streamSongEvents(songId: string, onEvent: (data: { phase: string; progress: number; message: string }) => void): EventSource {

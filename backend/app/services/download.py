@@ -17,9 +17,13 @@ class DownloadService:
                 continue
             try:
                 data = json.loads(line)
+                video_id = data.get("id", "")
+                url = data.get("webpage_url") or (
+                    f"https://www.youtube.com/watch?v={video_id}" if video_id else data.get("url", "")
+                )
                 results.append({
                     "title": data.get("title", ""),
-                    "url": data.get("url", data.get("webpage_url", "")),
+                    "url": url,
                     "thumbnail": data.get("thumbnail", ""),
                     "duration": data.get("duration", 0) or 0,
                     "channel": data.get("channel", data.get("uploader", "")),

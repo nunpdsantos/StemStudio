@@ -50,6 +50,15 @@ export function useAudioEngine(songId: string | null) {
 
   const load = useCallback(async () => {
     if (!songId) return;
+
+    // Close previous AudioContext to prevent memory leak
+    if (audioCtxRef.current) {
+      await audioCtxRef.current.close();
+      buffersRef.current.clear();
+      gainsRef.current.clear();
+      pannersRef.current.clear();
+    }
+
     const ctx = new AudioContext({ sampleRate: 44100 });
     audioCtxRef.current = ctx;
 
@@ -78,9 +87,12 @@ export function useAudioEngine(songId: string | null) {
   }, [songId]);
 
   const play = useCallback(
-    (fromOffset?: number) => {
+    async (fromOffset?: number) => {
       const ctx = audioCtxRef.current;
       if (!ctx || !isLoaded) return;
+
+      // Resume AudioContext suspended by Chrome/Safari autoplay policy
+      await ctx.resume();
 
       // Stop existing sources
       sourcesRef.current.forEach((s) => {
@@ -189,6 +201,7 @@ export function useAudioEngine(songId: string | null) {
           s.stop();
         } catch {}
       });
+      buffersRef.current.clear();
       audioCtxRef.current?.close();
     };
   }, []);

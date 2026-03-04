@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { SearchBar } from "@/components/search/SearchBar";
 import { SearchResults } from "@/components/search/SearchResults";
@@ -22,11 +22,21 @@ export default function Home() {
   const [isSearching, setIsSearching] = useState(false);
   const [songs, setSongs] = useState<Song[]>([]);
   const [processingStates, setProcessingStates] = useState<Record<string, { phase: string; progress: number; message: string }>>({});
+  const eventSourcesRef = useRef<Map<string, EventSource>>(new Map());
 
   // Load library on mount and when switching to library tab
   useEffect(() => {
     listSongs().then(setSongs).catch(console.error);
   }, [tab]);
+
+  // Cleanup EventSources on unmount
+  useEffect(() => {
+    const esMap = eventSourcesRef.current;
+    return () => {
+      esMap.forEach((es) => es.close());
+      esMap.clear();
+    };
+  }, []);
 
   const handleSearch = async (query: string) => {
     setIsSearching(true);
@@ -45,9 +55,11 @@ export default function Home() {
       setProcessingStates((prev) => ({ ...prev, [songId]: data }));
       if (data.phase === "done" || data.phase === "error") {
         es.close();
+        eventSourcesRef.current.delete(songId);
         listSongs().then(setSongs).catch(console.error);
       }
     });
+    eventSourcesRef.current.set(songId, es);
   }, []);
 
   const handleAddSong = async (url: string) => {

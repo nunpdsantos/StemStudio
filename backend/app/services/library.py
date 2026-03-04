@@ -1,6 +1,7 @@
 import json
 import uuid
 import shutil
+import threading
 from pathlib import Path
 from app.config import settings
 from app.models.schemas import Song, ProcessingStatus
@@ -9,6 +10,7 @@ from app.models.schemas import Song, ProcessingStatus
 class LibraryService:
     def __init__(self):
         self.library_file = settings.library_dir / "library.json"
+        self._lock = threading.Lock()
 
     def _read(self) -> list[dict]:
         if not self.library_file.exists():
@@ -36,22 +38,25 @@ class LibraryService:
         )
         song_dir = settings.library_dir / song_id
         song_dir.mkdir(parents=True, exist_ok=True)
-        songs = self._read()
-        songs.append(song.model_dump())
-        self._write(songs)
+        with self._lock:
+            songs = self._read()
+            songs.append(song.model_dump())
+            self._write(songs)
         return song
 
     def update_song(self, song_id: str, **kwargs):
-        songs = self._read()
-        for s in songs:
-            if s["id"] == song_id:
-                s.update(kwargs)
-                break
-        self._write(songs)
+        with self._lock:
+            songs = self._read()
+            for s in songs:
+                if s["id"] == song_id:
+                    s.update(kwargs)
+                    break
+            self._write(songs)
 
     def delete_song(self, song_id: str):
-        songs = [s for s in self._read() if s["id"] != song_id]
-        self._write(songs)
+        with self._lock:
+            songs = [s for s in self._read() if s["id"] != song_id]
+            self._write(songs)
         song_dir = settings.library_dir / song_id
         if song_dir.exists():
             shutil.rmtree(song_dir)
