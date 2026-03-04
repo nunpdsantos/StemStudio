@@ -5,6 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from app.config import settings
 from app.routes.songs import router as songs_router
 from app.routes.search import router as search_router
+from app.routes.export import router as export_router
 
 
 @asynccontextmanager
@@ -35,6 +36,7 @@ settings.library_dir.mkdir(parents=True, exist_ok=True)
 
 app.include_router(songs_router)
 app.include_router(search_router)
+app.include_router(export_router)
 
 app.mount("/library", StaticFiles(directory=str(settings.library_dir)), name="library")
 
