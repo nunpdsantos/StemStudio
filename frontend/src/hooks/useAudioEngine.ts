@@ -52,12 +52,12 @@ export function useAudioEngine(songId: string | null) {
     if (!songId) return;
 
     // Close previous AudioContext to prevent memory leak
-    if (audioCtxRef.current) {
+    if (audioCtxRef.current && audioCtxRef.current.state !== "closed") {
       await audioCtxRef.current.close();
-      buffersRef.current.clear();
-      gainsRef.current.clear();
-      pannersRef.current.clear();
     }
+    buffersRef.current.clear();
+    gainsRef.current.clear();
+    pannersRef.current.clear();
 
     const ctx = new AudioContext({ sampleRate: 44100 });
     audioCtxRef.current = ctx;
@@ -92,7 +92,9 @@ export function useAudioEngine(songId: string | null) {
       if (!ctx || !isLoaded) return;
 
       // Resume AudioContext suspended by Chrome/Safari autoplay policy
-      await ctx.resume();
+      if (ctx.state === "suspended") {
+        await ctx.resume();
+      }
 
       // Stop existing sources
       sourcesRef.current.forEach((s) => {
@@ -202,7 +204,9 @@ export function useAudioEngine(songId: string | null) {
         } catch {}
       });
       buffersRef.current.clear();
-      audioCtxRef.current?.close();
+      if (audioCtxRef.current?.state !== "closed") {
+        audioCtxRef.current?.close();
+      }
     };
   }, []);
 

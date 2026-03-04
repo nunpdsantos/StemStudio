@@ -33,6 +33,16 @@ async def process_song(
             audio_path = await loop.run_in_executor(
                 None, lambda: download_service.download_audio(url, song_dir)
             )
+            # Update metadata from YouTube
+            meta = download_service.get_metadata(url)
+            if meta:
+                library_service.update_song(
+                    song_id,
+                    title=meta.get("title", ""),
+                    artist=meta.get("artist", ""),
+                    duration=meta.get("duration", 0),
+                    thumbnail=meta.get("thumbnail", ""),
+                )
             yield PipelineEvent("downloading", 100, "Download complete")
         elif file_path:
             audio_path = file_path

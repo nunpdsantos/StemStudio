@@ -8,7 +8,7 @@ echo "Starting StemStudio..."
 cd backend
 if [ ! -d "venv" ]; then
     echo "Creating Python virtual environment..."
-    python3 -m venv venv
+    /opt/homebrew/bin/python3.11 -m venv venv
     source venv/bin/activate
     pip install -r requirements.txt
 else

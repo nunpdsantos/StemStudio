@@ -33,6 +33,22 @@ class DownloadService:
                 continue
         return results
 
+    def get_metadata(self, url: str) -> dict:
+        cmd = ["yt-dlp", url, "--dump-json", "--no-download", "--no-playlist"]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        if result.returncode != 0:
+            return {}
+        try:
+            data = json.loads(result.stdout)
+            return {
+                "title": data.get("title", ""),
+                "artist": data.get("channel", data.get("uploader", "")),
+                "duration": data.get("duration", 0) or 0,
+                "thumbnail": data.get("thumbnail", ""),
+            }
+        except json.JSONDecodeError:
+            return {}
+
     def download_audio(self, url: str, output_dir: Path, progress_callback=None) -> Path:
         output_path = output_dir / "original.%(ext)s"
         cmd = [
