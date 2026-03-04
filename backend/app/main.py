@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.config import settings
+from app.routes.songs import router as songs_router
 
 
 @asynccontextmanager
@@ -30,6 +31,8 @@ app.add_middleware(
 # StaticFiles checks directory existence at mount time, not at request time.
 # Create library_dir eagerly so the mount doesn't blow up on import.
 settings.library_dir.mkdir(parents=True, exist_ok=True)
+
+app.include_router(songs_router)
 
 app.mount("/library", StaticFiles(directory=str(settings.library_dir)), name="library")
 
