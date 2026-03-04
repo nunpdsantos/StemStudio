@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.config import settings
 from app.routes.songs import router as songs_router
+from app.routes.search import router as search_router
 
 
 @asynccontextmanager
@@ -33,6 +34,7 @@ app.add_middleware(
 settings.library_dir.mkdir(parents=True, exist_ok=True)
 
 app.include_router(songs_router)
+app.include_router(search_router)
 
 app.mount("/library", StaticFiles(directory=str(settings.library_dir)), name="library")
 
