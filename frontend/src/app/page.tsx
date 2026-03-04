@@ -25,9 +25,23 @@ export default function Home() {
   const eventSourcesRef = useRef<Map<string, EventSource>>(new Map());
 
   // Load library on mount and when switching to library tab
+  // Poll for in-progress songs so status updates even without SSE
   useEffect(() => {
     listSongs().then(setSongs).catch(console.error);
   }, [tab]);
+
+  // Poll status for songs that are still processing (in case SSE was lost)
+  useEffect(() => {
+    const processingIds = songs.filter(
+      (s) => s.status !== "done" && s.status !== "error"
+    ).map((s) => s.id);
+    if (processingIds.length === 0) return;
+
+    const interval = setInterval(() => {
+      listSongs().then(setSongs).catch(console.error);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [songs]);
 
   // Cleanup EventSources on unmount
   useEffect(() => {
